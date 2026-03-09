@@ -140,7 +140,11 @@ router.post("/purchase", authenticate, async (req: AuthRequest, res: Response) =
         });
 
         res.status(201).json(purchase);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            res.status(400).json({ error: "Duplicate txSignature" });
+            return;
+        }
         res.status(500).json({ error: "Internal server error" });
     }
 });

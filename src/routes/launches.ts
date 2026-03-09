@@ -21,7 +21,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const { name, symbol, totalSupply, pricePerToken, startsAt, endsAt, maxPerWallet, description, tiers, vesting } = req.body;
 
-        if (!name || !symbol || totalSupply === undefined || pricePerToken === undefined || !startsAt || !endsAt || maxPerWallet === undefined || description === undefined) {
+        if (!name || !symbol || totalSupply === undefined || pricePerToken === undefined || !startsAt || !endsAt || maxPerWallet === undefined) {
             res.status(400).json({ error: "Missing fields" });
             return;
         }
@@ -176,9 +176,17 @@ router.put("/:id", authenticate, async (req: AuthRequest, res: Response) => {
         const updated = await prisma.launch.update({
             where: { id: launchId },
             data,
+            include: {
+                purchases: { select: { amount: true } },
+                tiers: true,
+                vesting: true
+            }
         });
 
-        res.status(200).json(updated);
+        const status = getLaunchStatus(updated);
+        const { purchases, ...launchData } = updated;
+
+        res.status(200).json({ ...launchData, status });
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }
